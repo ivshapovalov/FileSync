@@ -8,7 +8,7 @@ class FileSync {
     private final Path srcPath;
     private final Path destPath;
 
-    private FileSync(Path srcPath,Path destPath) {
+    private FileSync(Path srcPath, Path destPath) {
         this.destPath = destPath;
         this.srcPath = srcPath;
     }
@@ -45,19 +45,34 @@ class FileSync {
 
         if (!Files.exists(destPath)) {
             try {
-                Files.createDirectory(destPath);
                 System.out.println("Destination каталог отсутствует: " + destPath);
-                System.out.println("Создаем каталог: " + destPath);
+                createDirectoriesRecursively(destPath);
             } catch (IOException e) {
-                e.printStackTrace();
+
+                System.out.println("Вторым параметром задано имя файла. Укажите имя каталога");
             }
+        }
+
+        if (!Files.isDirectory(srcPath)) {
+            updateFileFromSourceFile();
+            return;
         }
         updateNewFiles();
         deleteRemovedFiles();
         System.out.println("Синхронизация окончена: " + Calendar.getInstance().getTime());
     }
 
+    private void createDirectoriesRecursively(Path destPath) throws IOException {
+        Path destPathNew = destPath.getParent();
+        if (!Files.exists(destPathNew)) {
+            createDirectoriesRecursively(destPathNew);
+        }
+        Files.createDirectory(destPath);
+        System.out.println("Создаем каталог: " + destPath);
+    }
+
     private void updateNewFiles() {
+
         int srcPathCount = srcPath.getNameCount();
         List<Path> sourceFiles = new ArrayList<>();
         try {
@@ -86,15 +101,38 @@ class FileSync {
                 }
             } else {
                 if (!Files.isDirectory(destPathNew)) {
-                    try {
-                        if (Files.size(srcPathNew) != Files.size(destPathNew)) {
-                            Files.copy(srcPathNew, destPathNew, StandardCopyOption.REPLACE_EXISTING);
-                            System.out.println("Обновлен файл: " + srcPathNew);
-                            System.out.println("Обновляем файл: " + destPathNew);
-                        }
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
+                    copyFilesFromDirToDir(srcPathNew, destPathNew);
+                }
+            }
+        }
+    }
+
+    private void copyFilesFromDirToDir(Path srcPathNew, Path destPathNew) {
+        try {
+            if (Files.size(srcPathNew) != Files.size(destPathNew)) {
+                Files.copy(srcPathNew, destPathNew, StandardCopyOption.REPLACE_EXISTING);
+                System.out.println("Измененный файл: " + srcPathNew);
+                System.out.println("Обновляем файл: " + destPathNew);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void updateFileFromSourceFile() {
+        if (Files.isDirectory(destPath)) {
+            int srcPathCount = srcPath.getNameCount();
+            Path relativePath = srcPath.subpath(srcPathCount - 1, srcPathCount);
+            Path destPathNew = destPath.resolve(relativePath);
+            if (Files.exists(destPathNew)) {
+                copyFilesFromDirToDir(srcPath, destPathNew);
+            } else {
+                try {
+                    Files.copy(srcPath, destPathNew, StandardCopyOption.REPLACE_EXISTING);
+                    System.out.println("Новый файл: " + srcPath);
+                    System.out.println("Создаем файл: " + destPathNew);
+                } catch (IOException e) {
+                    e.printStackTrace();
                 }
             }
         }
