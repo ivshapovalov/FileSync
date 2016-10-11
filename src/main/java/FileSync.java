@@ -117,9 +117,9 @@ class FileSync {
 
     private boolean filesIsEquals(Path srcPathNew, Path destPathNew) throws IOException {
         if (Files.size(srcPathNew) != Files.size(destPathNew)) return false;
-        byte [] srcFile=Files.readAllBytes(srcPathNew);
-        byte [] destFile=Files.readAllBytes(destPathNew);
-        if (srcFile.length!=destFile.length) return false;
+        byte[] srcFile = Files.readAllBytes(srcPathNew);
+        byte[] destFile = Files.readAllBytes(destPathNew);
+        if (srcFile.length != destFile.length) return false;
         return Arrays.equals(srcFile, destFile);
     }
 
@@ -152,18 +152,34 @@ class FileSync {
         }
         for (Path destPathNew : sourceFiles
                 ) {
+            if (!Files.exists(destPathNew)) {
+                continue;
+            }
             int currentPathCount = destPathNew.getNameCount();
             Path relativePath = destPathNew.subpath(destPathCount, currentPathCount);
             Path srcPathNew = srcPath.resolve(relativePath);
             if (!Files.exists(srcPathNew)) {
                 try {
-                    Files.deleteIfExists(destPathNew);
-                    System.out.println("Удален каталог: " + srcPathNew);
-                    System.out.println("Удаляем каталог: " + destPathNew);
+                    deleteDirectoriesRecursively(destPathNew);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
             }
+        }
+    }
+
+    private void deleteDirectoriesRecursively(Path destPath) throws IOException {
+        try (DirectoryStream<Path> stream = Files.newDirectoryStream(destPath)) {
+            for (Path entry : stream) {
+                if (Files.isDirectory(entry)) {
+                    deleteDirectoriesRecursively(entry);
+                } else {
+                    Files.deleteIfExists(entry);
+                    System.out.println("Удаляем файл: " + entry);
+                }
+            }
+            Files.deleteIfExists(destPath);
+            System.out.println("Удаляем каталог: " + destPath);
         }
     }
 
