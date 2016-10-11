@@ -4,11 +4,11 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.List;
 
-public class FileSync {
-    private Path srcPath;
-    private Path destPath;
+class FileSync {
+    private final Path srcPath;
+    private final Path destPath;
 
-    public FileSync(Path srcPath,Path destPath) {
+    private FileSync(Path srcPath,Path destPath) {
         this.destPath = destPath;
         this.srcPath = srcPath;
     }
@@ -40,7 +40,7 @@ public class FileSync {
     }
 
 
-    void synchronize() {
+    private void synchronize() {
         System.out.println("Синхронизация начата: " + Calendar.getInstance().getTime());
 
         if (!Files.exists(destPath)) {
