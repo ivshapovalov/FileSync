@@ -6,45 +6,39 @@ import java.util.List;
 
 public class FileSync {
     public static void main(String[] args) {
-
         if (IllegalParameters(args)) {
             return;
         }
 
-        System.out.println("Синхронизация начата: "+ Calendar.getInstance().getTime());
+        System.out.println("Синхронизация начата: " + Calendar.getInstance().getTime());
 
         Path srcPath = FileSystems.getDefault().getPath(args[0]);
         Path destPath = FileSystems.getDefault().getPath(args[1]);
         if (!Files.exists(destPath)) {
             try {
                 Files.createDirectory(destPath);
-                System.out.println("Destination каталог отсутствует: "+destPath);
-                System.out.println("Создаем каталог: "+destPath);
+                System.out.println("Destination каталог отсутствует: " + destPath);
+                System.out.println("Создаем каталог: " + destPath);
             } catch (IOException e) {
                 e.printStackTrace();
             }
         }
         updateNewFiles(srcPath, destPath);
         deleteRemovedFiles(srcPath, destPath);
-
-        System.out.println("Синхронизация окончена: "+ Calendar.getInstance().getTime());
-
+        System.out.println("Синхронизация окончена: " + Calendar.getInstance().getTime());
     }
 
     private static boolean IllegalParameters(String[] args) {
         if (args.length != 2) {
             System.out.println("Количество параметров должно быть равно двум. Source каталог и Destination каталог");
         }
-
         String srcDir = args[0];
         String destDir = args[1];
-
         Path srcPath = FileSystems.getDefault().getPath(srcDir);
-        Path destPath = FileSystems.getDefault().getPath(destDir);
         if (!Files.exists(srcPath)) {
             System.out.println("Errors: Source directory does not exists!. Exit program");
             return true;
-         }
+        }
         return false;
     }
 
@@ -56,22 +50,21 @@ public class FileSync {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (Path path : sourceFiles
+        for (Path srcPathNew : sourceFiles
                 ) {
-            int currentPathCount = path.getNameCount();
-            Path relativePath = path.subpath(srcPathCount, currentPathCount);
-            Path srcPathNew = path;
+            int currentPathCount = srcPathNew.getNameCount();
+            Path relativePath = srcPathNew.subpath(srcPathCount, currentPathCount);
             Path destPathNew = destPath.resolve(relativePath);
             if (!Files.exists(destPathNew)) {
                 try {
                     if (Files.isDirectory(srcPathNew)) {
                         Files.createDirectory(destPathNew);
-                        System.out.println("Новый каталог: "+srcPathNew);
-                        System.out.println("Создаем каталог:"+destPathNew);
+                        System.out.println("Новый каталог: " + srcPathNew);
+                        System.out.println("Создаем каталог:" + destPathNew);
                     } else {
                         Files.copy(srcPathNew, destPathNew);
-                        System.out.println("Новый файл: "+srcPathNew);
-                        System.out.println("Создаем файл: "+destPathNew);
+                        System.out.println("Новый файл: " + srcPathNew);
+                        System.out.println("Создаем файл: " + destPathNew);
                     }
                 } catch (IOException e) {
                     e.printStackTrace();
@@ -81,8 +74,8 @@ public class FileSync {
                     try {
                         if (Files.size(srcPathNew) != Files.size(destPathNew)) {
                             Files.copy(srcPathNew, destPathNew, StandardCopyOption.REPLACE_EXISTING);
-                            System.out.println("Обновлен файл: "+srcPathNew);
-                            System.out.println("Обновляем файл: "+destPathNew);
+                            System.out.println("Обновлен файл: " + srcPathNew);
+                            System.out.println("Обновляем файл: " + destPathNew);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
@@ -100,17 +93,16 @@ public class FileSync {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        for (Path path : sourceFiles
+        for (Path destPathNew : sourceFiles
                 ) {
-            int currentPathCount = path.getNameCount();
-            Path relativePath = path.subpath(destPathCount, currentPathCount);
+            int currentPathCount = destPathNew.getNameCount();
+            Path relativePath = destPathNew.subpath(destPathCount, currentPathCount);
             Path srcPathNew = srcPath.resolve(relativePath);
-            Path destPathNew = path;
             if (!Files.exists(srcPathNew)) {
                 try {
                     Files.deleteIfExists(destPathNew);
-                    System.out.println("Удален каталог: "+srcPathNew);
-                    System.out.println("Удаляем каталог: "+destPathNew);
+                    System.out.println("Удален каталог: " + srcPathNew);
+                    System.out.println("Удаляем каталог: " + destPathNew);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -128,10 +120,8 @@ public class FileSync {
                 }
             }
         } catch (DirectoryIteratorException ex) {
-            // I/O error encounted during the iteration, the cause is an IOException
             throw ex.getCause();
         }
         return result;
     }
-
 }
