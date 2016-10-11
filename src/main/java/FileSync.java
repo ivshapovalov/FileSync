@@ -1,6 +1,7 @@
 import java.io.IOException;
 import java.nio.file.*;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.List;
 
@@ -14,18 +15,16 @@ class FileSync {
     }
 
     public static void main(String[] args) {
-
-        if (IllegalParameters(args)) {
+        if (hasIllegalParameters(args)) {
             return;
         }
-
         Path srcPath = FileSystems.getDefault().getPath(args[0]);
         Path destPath = FileSystems.getDefault().getPath(args[1]);
 
         new FileSync(srcPath, destPath).synchronize();
     }
 
-    private static boolean IllegalParameters(String[] args) {
+    private static boolean hasIllegalParameters(String[] args) {
         if (args.length != 2) {
             System.out.println("Количество параметров должно быть равно двум. Source каталог и Destination каталог");
             return true;
@@ -33,12 +32,11 @@ class FileSync {
         String srcDir = args[0];
         Path srcPath = FileSystems.getDefault().getPath(srcDir);
         if (!Files.exists(srcPath)) {
-            System.out.println("Errors: Source directory does not exists!. Exit program");
+            System.out.println("Ошибка: Source каталог не существует!. Программа завершена");
             return true;
         }
         return false;
     }
-
 
     private void synchronize() {
         System.out.println("Синхронизация начата: " + Calendar.getInstance().getTime());
@@ -48,7 +46,6 @@ class FileSync {
                 System.out.println("Destination каталог отсутствует: " + destPath);
                 createDirectoriesRecursively(destPath);
             } catch (IOException e) {
-
                 System.out.println("Вторым параметром задано имя файла. Укажите имя каталога");
             }
         }
@@ -58,7 +55,7 @@ class FileSync {
             return;
         }
         updateNewFiles();
-        deleteRemovedFiles();
+        deleteRemovedInSourceFiles();
         System.out.println("Синхронизация окончена: " + Calendar.getInstance().getTime());
     }
 
@@ -72,11 +69,10 @@ class FileSync {
     }
 
     private void updateNewFiles() {
-
         int srcPathCount = srcPath.getNameCount();
         List<Path> sourceFiles = new ArrayList<>();
         try {
-            sourceFiles = listSourceFiles(srcPath);
+            sourceFiles = listPath(srcPath);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -109,7 +105,7 @@ class FileSync {
 
     private void copyFilesFromDirToDir(Path srcPathNew, Path destPathNew) {
         try {
-            if (Files.size(srcPathNew) != Files.size(destPathNew)) {
+            if (!filesIsEquals(srcPathNew, destPathNew)) {
                 Files.copy(srcPathNew, destPathNew, StandardCopyOption.REPLACE_EXISTING);
                 System.out.println("Измененный файл: " + srcPathNew);
                 System.out.println("Обновляем файл: " + destPathNew);
@@ -117,6 +113,14 @@ class FileSync {
         } catch (IOException e) {
             e.printStackTrace();
         }
+    }
+
+    private boolean filesIsEquals(Path srcPathNew, Path destPathNew) throws IOException {
+        if (Files.size(srcPathNew) != Files.size(destPathNew)) return false;
+        byte [] srcFile=Files.readAllBytes(srcPathNew);
+        byte [] destFile=Files.readAllBytes(destPathNew);
+        if (srcFile.length!=destFile.length) return false;
+        return Arrays.equals(srcFile, destFile);
     }
 
     private void updateFileFromSourceFile() {
@@ -138,11 +142,11 @@ class FileSync {
         }
     }
 
-    private void deleteRemovedFiles() {
+    private void deleteRemovedInSourceFiles() {
         int destPathCount = destPath.getNameCount();
         List<Path> sourceFiles = new ArrayList<>();
         try {
-            sourceFiles = listSourceFiles(destPath);
+            sourceFiles = listPath(destPath);
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -163,13 +167,13 @@ class FileSync {
         }
     }
 
-    private List<Path> listSourceFiles(Path dir) throws IOException {
+    private List<Path> listPath(Path dir) throws IOException {
         List<Path> result = new ArrayList<>();
         try (DirectoryStream<Path> stream = Files.newDirectoryStream(dir)) {
             for (Path entry : stream) {
                 result.add(entry);
                 if (Files.isDirectory(entry)) {
-                    result.addAll(listSourceFiles(entry));
+                    result.addAll(listPath(entry));
                 }
             }
         } catch (DirectoryIteratorException ex) {
