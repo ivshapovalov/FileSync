@@ -119,8 +119,7 @@ class FileSync {
         if (Files.size(srcPathNew) != Files.size(destPathNew)) return false;
         byte[] srcFile = Files.readAllBytes(srcPathNew);
         byte[] destFile = Files.readAllBytes(destPathNew);
-        if (srcFile.length != destFile.length) return false;
-        return Arrays.equals(srcFile, destFile);
+        return srcFile.length == destFile.length && Arrays.equals(srcFile, destFile);
     }
 
     private void updateFileFromSourceFile() {
